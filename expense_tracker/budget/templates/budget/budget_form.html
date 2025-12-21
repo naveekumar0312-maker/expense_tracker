@@ -1,0 +1,73 @@
+{% extends "budget/base.html" %}
+{% block title %}Budget Form{% endblock %}
+{% block page_title %}Add Budget{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-5 col-md-7">
+
+    <div class="card border-0 shadow rounded-4">
+
+      <!-- HEADER -->
+      <div class="card-header bg-primary bg-gradient text-white py-3 rounded-top-4">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-wallet2"></i>
+          <h6 class="mb-0 fw-bold">Add Budget</h6>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div class="card-body p-4">
+
+        <form method="POST">
+          {% csrf_token %}
+
+          <!-- CATEGORY -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-muted">
+              Category
+            </label>
+            {{ form.category }}
+          </div>
+
+          <!-- AMOUNT -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-muted">
+              Amount
+            </label>
+            <div class="input-group">
+              <span class="input-group-text">₹</span>
+              {{ form.amount }}
+            </div>
+          </div>
+
+          <!-- DATE (REAL CALENDAR – DJANGO SAFE) -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold text-muted">
+              Budget Date
+            </label>
+            {{ form.date }}
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'budget:list' %}"
+               class="btn btn-outline-secondary btn-sm px-3">
+              Cancel
+            </a>
+            <button type="submit"
+                    class="btn btn-primary btn-sm fw-bold px-4">
+              Save Budget
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

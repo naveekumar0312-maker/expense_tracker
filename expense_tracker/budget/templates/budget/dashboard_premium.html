@@ -1,0 +1,275 @@
+{% extends 'budget/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ================= HEADER ================= -->
+<div class="card border border-success-subtle shadow-lg mb-4 bg-success-subtle">
+  <div class="card-body d-flex justify-content-between align-items-center">
+
+    <div>
+      <h4 class="fw-bold mb-0 text-success">
+        <i class="bi bi-wallet2 me-2"></i>
+        DailyExpense Dashboard
+      </h4>
+      <small class="text-success-emphasis">
+        Smart income & expense management
+      </small>
+    </div>
+
+    <span class="badge rounded-pill bg-success text-white px-3 py-2 shadow-sm">
+      <i class="bi bi-speedometer2 me-1"></i> Dashboard
+    </span>
+
+  </div>
+</div>
+
+
+<!-- ================= SUMMARY CARDS ================= -->
+<div class="row g-4 mb-5">
+
+  <!-- TOTAL INCOME -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow text-center h-100">
+      <div class="card-body">
+        <div class="mb-3">
+          <i class="bi bi-cash-stack fs-1 text-success"></i>
+        </div>
+        <h6 class="text-muted">Total Income</h6>
+        <h3 class="fw-bold text-success">
+          ₹ {{ total_income|default:"0.00" }}
+        </h3>
+        <span class="badge bg-success-subtle text-success">
+          <i class="bi bi-arrow-up"></i> Earnings
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOTAL EXPENSE -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow text-center h-100">
+      <div class="card-body">
+        <div class="mb-3">
+          <i class="bi bi-credit-card-2-front fs-1 text-danger"></i>
+        </div>
+        <h6 class="text-muted">Total Expense</h6>
+        <h3 class="fw-bold text-danger">
+          ₹ {{ total_expense|default:"0.00" }}
+        </h3>
+        <span class="badge bg-danger-subtle text-danger">
+          <i class="bi bi-arrow-down"></i> Spending
+        </span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= PREMIUM FEATURE CARD ================= -->
+<div class="card border-0 shadow mb-5">
+  <div class="row g-0 align-items-center">
+
+    <!-- IMAGE -->
+    <div class="col-md-4 text-center bg-light p-4">
+      <img
+        src="data:image/jpeg;base64,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"
+        class="img-fluid rounded-3 shadow-sm"
+        alt="Finance Dashboard">
+    </div>
+
+    <!-- CONTENT -->
+    <div class="col-md-8 ">
+      <div class="card-body">
+        <h5 class="fw-bold mb-2">
+          <i class="bi bi-graph-up-arrow text-primary me-2"></i>
+          Smart Money Control
+        </h5>
+
+        <p class="text-muted">
+          Track income and expenses in one place with a clean and
+          professional dashboard. Stay disciplined, organized,
+          and financially confident.
+        </p>
+
+      <div class="row g-3 mt-3">
+
+  <!-- Categories -->
+  <div class="col-md-3 col-6">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-tags fs-3 text-primary mb-2"></i>
+        <div class="fw-semibold small">Categories</div>
+        <div class="text-muted small">Organize expenses</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget -->
+  <div class="col-md-3 col-6">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-wallet fs-3 text-success mb-2"></i>
+        <div class="fw-semibold small">Budget</div>
+        <div class="text-muted small">Set limits</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile -->
+  <div class="col-md-3 col-6">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-person-circle fs-3 text-info mb-2"></i>
+        <div class="fw-semibold small">Profile</div>
+        <div class="text-muted small">User details</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Savings -->
+  <div class="col-md-3 col-6">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-piggy-bank fs-3 text-warning mb-2"></i>
+        <div class="fw-semibold small">Savings</div>
+        <div class="text-muted small">Track goals</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reports -->
+  <div class="col-md-3 col-6">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-file-earmark-bar-graph fs-3 text-primary mb-2"></i>
+        <div class="fw-semibold small">Reports</div>
+        <div class="text-muted small">Monthly summary</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password -->
+  <div class="col-md-3 col-6">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-key fs-3 text-danger mb-2"></i>
+        <div class="fw-semibold small">Change Password</div>
+        <div class="text-muted small">Security settings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export CSV / PDF -->
+  <div class="col-md-3 col-6">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-download fs-3 text-secondary mb-2"></i>
+        <div class="fw-semibold small">Export CSV / PDF</div>
+        <div class="text-muted small">Download data</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Income & Expense -->
+  <div class="col-md-3 col-6">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-arrow-left-right fs-3 text-success mb-2"></i>
+        <div class="fw-semibold small">Income & Expense</div>
+        <div class="text-muted small">Daily entries</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= PREMIUM FOOTER ================= -->
+<footer class="bg-dark border-top border-warning-subtle shadow-lg">
+  <div class="container-fluid px-4 py-5">
+
+    <div class="row gy-4 text-light">
+
+      <!-- ABOUT -->
+      <div class="col-md-3">
+        <h6 class="fw-bold mb-3 text-warning-emphasis">About DailyExpense</h6>
+        <p class="small text-secondary">
+          DailyExpense helps users track income, control expenses,
+          and manage budgets with a secure and professional dashboard.
+        </p>
+
+        <div class="d-flex gap-3 mt-3">
+          <i class="bi bi-facebook text-warning"></i>
+          <i class="bi bi-twitter text-warning"></i>
+          <i class="bi bi-instagram text-warning"></i>
+          <i class="bi bi-linkedin text-warning"></i>
+        </div>
+      </div>
+
+      <!-- QUICK LINKS -->
+      <div class="col-md-3">
+        <h6 class="fw-bold mb-3 text-warning-emphasis">Quick Links</h6>
+        <ul class="list-unstyled small">
+          <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">Dashboard</a></li>
+          <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">Income</a></li>
+          <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">Expenses</a></li>
+          <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">Budget</a></li>
+          <li><a href="#" class="text-secondary text-decoration-none">Reports</a></li>
+        </ul>
+      </div>
+
+      <!-- FEATURES -->
+      <div class="col-md-3">
+        <h6 class="fw-bold mb-3 text-warning-emphasis">Features</h6>
+        <ul class="list-unstyled small text-secondary">
+          <li class="mb-2">Income & Expense Tracking</li>
+          <li class="mb-2">Budget Planning</li>
+          <li class="mb-2">Savings Goals</li>
+          <li class="mb-2">Monthly Reports</li>
+          <li>Export CSV / PDF</li>
+        </ul>
+      </div>
+
+      <!-- CONTACT -->
+      <div class="col-md-3">
+        <h6 class="fw-bold mb-3 text-warning-emphasis">Contact</h6>
+        <ul class="list-unstyled small text-secondary">
+          <li class="mb-2">
+            <i class="bi bi-geo-alt me-2 text-warning"></i>
+            Coimbatore, Tamil Nadu
+          </li>
+          <li class="mb-2">
+            <i class="bi bi-telephone me-2 text-warning"></i>
+            +91 8695456223
+          </li>
+          <li>
+            <i class="bi bi-envelope me-2 text-warning"></i>
+            nave@dailyexpense.com
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- DIVIDER -->
+    <hr class="border-warning-subtle my-4">
+
+    <!-- COPYRIGHT -->
+    <div class="text-center small text-secondary">
+      © 2025 <span class="fw-semibold text-warning">DailyExpense</span> • All Rights Reserved
+    </div>
+
+  </div>
+</footer>
+
+
+{% endblock %}

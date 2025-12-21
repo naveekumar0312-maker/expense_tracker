@@ -1,0 +1,163 @@
+{% extends 'budget/base.html' %}
+{% load static %}
+
+{% block title %}Profile Settings{% endblock %}
+{% block page_title %}Profile Settings{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-md-11">
+
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+      <!-- HEADER -->
+      <div class="card-header bg-primary bg-gradient text-white py-4">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-person-gear fs-3"></i>
+          <div>
+            <h5 class="mb-0 fw-bold">Profile Settings</h5>
+            <small class="opacity-75">Manage your personal information</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+
+        <!-- ================= PROFILE UPDATE FORM ================= -->
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="row g-4 align-items-center">
+
+            <!-- LEFT SIDE : DETAILS -->
+            <div class="col-md-8">
+              <div class="row g-3">
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-person me-1 text-primary"></i>
+                    Full Name
+                  </label>
+                  <input type="text"
+                         name="full_name"
+                         value="{{ profile.full_name }}"
+                         class="form-control form-control-lg">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-envelope me-1 text-primary"></i>
+                    Email
+                  </label>
+                  <input type="email"
+                         name="email"
+                         value="{{ profile.email }}"
+                         class="form-control form-control-lg">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-123 me-1 text-primary"></i>
+                    Age
+                  </label>
+                  <input type="number"
+                         name="age"
+                         value="{{ profile.age }}"
+                         class="form-control form-control-lg">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-calendar-event me-1 text-primary"></i>
+                    Date of Birth
+                  </label>
+                  <input type="date"
+                         name="date_of_birth"
+                         value="{{ profile.date_of_birth|date:'Y-m-d' }}"
+                         class="form-control form-control-lg">
+                </div>
+
+              </div>
+            </div>
+
+            <!-- RIGHT SIDE : PROFILE IMAGE -->
+            <div class="col-md-4 text-center">
+
+              <div class="position-relative d-inline-block mb-3">
+                {% if profile.profile_pic %}
+                  <img src="{{ profile.profile_pic.url }}"
+                       class="rounded-circle shadow"
+                       width="140" height="140"
+                       style="object-fit:cover;">
+                {% else %}
+                  <img src="{% static 'budget/default_profile.jpg' %}"
+                       class="rounded-circle shadow"
+                       width="140" height="140"
+                       style="object-fit:cover;">
+                {% endif %}
+
+                <span class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2">
+                  <i class="bi bi-camera-fill"></i>
+                </span>
+              </div>
+
+              <input type="file"
+                     name="profile_pic"
+                     class="form-control form-control-sm">
+            </div>
+
+          </div>
+
+          <!-- ACTION BUTTONS -->
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <a href="{% url 'view_profile' %}"
+               class="btn btn-outline-secondary btn-lg px-4">
+              <i class="bi bi-eye me-1"></i>
+              View Profile
+            </a>
+            <button type="submit"
+                    class="btn btn-success btn-lg fw-bold px-5">
+              <i class="bi bi-check-circle me-1"></i>
+              Save Changes
+            </button>
+          </div>
+
+        </form>
+
+        <!-- ================= DANGER ZONE ================= -->
+        <hr class="my-5">
+
+        <div class="p-4 border border-danger rounded-4 bg-danger bg-opacity-10">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+            <div>
+              <h6 class="text-danger fw-bold mb-1">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                Danger Zone
+              </h6>
+              <small class="text-muted">
+                Deleting your profile will permanently remove your account.
+              </small>
+            </div>
+
+            <form method="POST" action="{% url 'delete_profile' %}">
+              {% csrf_token %}
+              <button type="submit"
+                      class="btn btn-danger fw-bold px-4"
+                      onclick="return confirm('Are you sure you want to delete your profile? This action cannot be undone.')">
+                <i class="bi bi-trash3-fill me-1"></i>
+                Delete Profile
+              </button>
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
