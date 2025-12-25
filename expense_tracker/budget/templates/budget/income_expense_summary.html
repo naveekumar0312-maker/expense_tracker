@@ -1,0 +1,71 @@
+{% extends "budget/base.html" %}
+{% block title %}Income & Expense Summary{% endblock %}
+{% block page_title %}Income & Expense Analytics{% endblock %}
+
+{% block content %}
+
+<div class="row g-4">
+
+  <!-- TODAY -->
+  <div class="col-md-4">
+    <div class="card shadow-sm rounded-4 text-center">
+      <div class="card-body">
+        <i class="bi bi-calendar-day fs-2 text-primary"></i>
+        <h6 class="mt-2 fw-bold">Today</h6>
+        <p class="mb-1 text-success">Income: ₹ {{ today_income }}</p>
+        <p class="mb-0 text-danger">Expense: ₹ {{ today_expense }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- YESTERDAY -->
+  <div class="col-md-4">
+    <div class="card shadow-sm rounded-4 text-center">
+      <div class="card-body">
+        <i class="bi bi-arrow-left-circle fs-2 text-warning"></i>
+        <h6 class="mt-2 fw-bold">Yesterday</h6>
+        <p class="mb-1 text-success">Income: ₹ {{ yesterday_income }}</p>
+        <p class="mb-0 text-danger">Expense: ₹ {{ yesterday_expense }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAST 7 DAYS -->
+  <div class="col-md-4">
+    <div class="card shadow-sm rounded-4 text-center">
+      <div class="card-body">
+        <i class="bi bi-calendar-week fs-2 text-info"></i>
+        <h6 class="mt-2 fw-bold">Last 7 Days</h6>
+        <p class="mb-1 text-success">Income: ₹ {{ last7_income }}</p>
+        <p class="mb-0 text-danger">Expense: ₹ {{ last7_expense }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAST 30 DAYS -->
+  <div class="col-md-6">
+    <div class="card shadow-sm rounded-4 text-center">
+      <div class="card-body">
+        <i class="bi bi-calendar3 fs-2 text-secondary"></i>
+        <h6 class="mt-2 fw-bold">Last 30 Days</h6>
+        <p class="mb-1 text-success">Income: ₹ {{ last30_income }}</p>
+        <p class="mb-0 text-danger">Expense: ₹ {{ last30_expense }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- THIS YEAR -->
+  <div class="col-md-6">
+    <div class="card shadow-sm rounded-4 text-center">
+      <div class="card-body">
+        <i class="bi bi-calendar-range fs-2 text-dark"></i>
+        <h6 class="mt-2 fw-bold">This Year</h6>
+        <p class="mb-1 text-success">Income: ₹ {{ year_income }}</p>
+        <p class="mb-0 text-danger">Expense: ₹ {{ year_expense }}</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

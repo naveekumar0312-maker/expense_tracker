@@ -816,3 +816,74 @@ def expense(request):
         "form": form,
         "expenses": expenses   # 🔥 MUST
     })
+
+from datetime import date, timedelta
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+from .models import Income, Expense
+
+@login_required
+def income_expense_summary(request):
+    user = request.user
+    today = date.today()
+
+    ranges = {
+        "today": today,
+        "yesterday": today - timedelta(days=1),
+        "last7": today - timedelta(days=7),
+        "last30": today - timedelta(days=30),
+        "year": date(today.year, 1, 1),
+    }
+
+    data = {}
+
+    # TODAY
+    data["today_income"] = Income.objects.filter(
+        user=user, date=today
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    data["today_expense"] = Expense.objects.filter(
+        user=user, date=today
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    # YESTERDAY
+    data["yesterday_income"] = Income.objects.filter(
+        user=user, date=ranges["yesterday"]
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    data["yesterday_expense"] = Expense.objects.filter(
+        user=user, date=ranges["yesterday"]
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    # LAST 7 DAYS
+    data["last7_income"] = Income.objects.filter(
+        user=user, date__gte=ranges["last7"]
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    data["last7_expense"] = Expense.objects.filter(
+        user=user, date__gte=ranges["last7"]
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    # LAST 30 DAYS
+    data["last30_income"] = Income.objects.filter(
+        user=user, date__gte=ranges["last30"]
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    data["last30_expense"] = Expense.objects.filter(
+        user=user, date__gte=ranges["last30"]
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    # THIS YEAR
+    data["year_income"] = Income.objects.filter(
+        user=user, date__gte=ranges["year"]
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    data["year_expense"] = Expense.objects.filter(
+        user=user, date__gte=ranges["year"]
+    ).aggregate(t=Sum("amount"))["t"] or 0
+
+    return render(
+        request,
+        "budget/income_expense_summary.html",
+        data
+    )

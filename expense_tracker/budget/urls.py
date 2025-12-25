@@ -5,6 +5,7 @@ from . import views_admin
 app_name = "budget"
 
 urlpatterns = [
+
     # --------------------
     # Budget CRUD
     # --------------------
@@ -14,11 +15,20 @@ urlpatterns = [
     path("delete/<int:pk>/", views.budget_delete, name="delete"),
 
     # --------------------
+    # USER SUMMARY / ANALYTICS
+    # --------------------
+    path(
+        "summary/",
+        views.income_expense_summary,
+        name="income_expense_summary"
+    ),
+
+    # --------------------
     # ADMIN – USER PREVIEW PAGES
     # --------------------
     path(
         "admin/user/<int:user_id>/dashboard/",
-        views.admin_user_dashboard,
+        views_admin.admin_user_dashboard,
         name="admin_user_dashboard",
     ),
     path(
@@ -51,21 +61,18 @@ urlpatterns = [
         views.admin_user_budget,
         name="admin_user_budget",
     ),
-        path(
+
+    # --------------------
+    # ADMIN EXPORTS
+    # --------------------
+    path(
         "admin/export/csv/user/<int:user_id>/",
         views_admin.admin_export_csv_single_user,
         name="admin_export_csv_single_user"
     ),
-
     path(
         "admin/export/pdf/user/<int:user_id>/",
         views_admin.admin_export_pdf_single_user,
         name="admin_export_pdf_single_user"
     ),
-    path(
-    "admin/user/<int:user_id>/dashboard/",
-    views_admin.admin_user_dashboard,
-    name="admin_user_dashboard"
-),
-
 ]
