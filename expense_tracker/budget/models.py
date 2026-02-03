@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.validators import RegexValidator
 
 
 # ==============================
@@ -10,7 +11,19 @@ from django.dispatch import receiver
 # ==============================
 class Category(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
+    name = models.CharField(
+        max_length=50,
+        validators=[
+            RegexValidator(
+                regex=r'^[A-Za-z ]+$',
+                message="Category name must contain only alphabets"
+            )
+        ]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user","name")
 
     def __str__(self):
         return self.name
