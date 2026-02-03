@@ -29,7 +29,7 @@ class SuperUserOnlyAdmin(admin.ModelAdmin):
 
 
 # ==================================================
-# 👤 USER ADMIN (ALL USER DATA ACCESS)
+# 👤 CUSTOM USER ADMIN
 # ==================================================
 admin.site.unregister(User)
 
@@ -40,79 +40,52 @@ class CustomUserAdmin(UserAdmin):
         "username",
         "email",
         "dashboard",
-        "profile_btn",
         "income",
         "expense",
-        "savings",
-        "reports",
         "budget",
+        "reports",
         "delete_user",
     )
 
     search_fields = ("username", "email")
 
-    # 🔥 hide superusers from user list
+    # 🔥 hide superusers
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.filter(is_superuser=False)
 
-    # -------- helper --------
     def _btn(self, text, url):
         return format_html('<a class="button" href="{}">{}</a>', url, text)
 
-    # -------- USER PREVIEW PAGES --------
     def dashboard(self, obj):
         return self._btn(
             "Dashboard",
             reverse("budget:admin_user_dashboard", args=[obj.id])
         )
-    dashboard.short_description = "Dashboard"
 
-    def profile_btn(self, obj):
+    def income(self, obj):
         return self._btn(
-            "Profile",
-            reverse("budget:admin_user_profile", args=[obj.id])
+            "Income",
+            reverse("admin:budget_income_changelist") + f"?user__id__exact={obj.id}"
         )
-    profile_btn.short_description = "Profile"
 
-    def savings(self, obj):
+    def expense(self, obj):
         return self._btn(
-            "Savings",
-            reverse("budget:admin_user_savings", args=[obj.id])
+            "Expense",
+            reverse("admin:budget_expense_changelist") + f"?user__id__exact={obj.id}"
         )
-    savings.short_description = "Savings"
+
+    def budget(self, obj):
+        return self._btn(
+            "Budget",
+            reverse("admin:budget_budget_changelist") + f"?user__id__exact={obj.id}"
+        )
 
     def reports(self, obj):
         return self._btn(
             "Reports",
             reverse("budget:admin_user_reports", args=[obj.id])
         )
-    reports.short_description = "Reports"
-
-    # -------- ADMIN FILTERED DATA --------
-    def income(self, obj):
-        url = (
-            reverse("admin:budget_income_changelist")
-            + f"?user__id__exact={obj.id}"
-        )
-        return self._btn("Income", url)
-    income.short_description = "Income"
-
-    def expense(self, obj):
-        url = (
-            reverse("admin:budget_expense_changelist")
-            + f"?user__id__exact={obj.id}"
-        )
-        return self._btn("Expense", url)
-    expense.short_description = "Expense"
-
-    def budget(self, obj):
-        url = (
-            reverse("admin:budget_budget_changelist")
-            + f"?user__id__exact={obj.id}"
-        )
-        return self._btn("Budget", url)
-    budget.short_description = "Budget"
 
     def delete_user(self, obj):
         return format_html(
@@ -120,11 +93,10 @@ class CustomUserAdmin(UserAdmin):
             'href="{}">Delete</a>',
             reverse("admin:auth_user_delete", args=[obj.id])
         )
-    delete_user.short_description = "Delete"
 
 
 # ==================================================
-# OTHER MODELS
+# OTHER MODELS (SUPERUSER ONLY)
 # ==================================================
 @admin.register(Category)
 class CategoryAdmin(SuperUserOnlyAdmin):
@@ -148,15 +120,3 @@ class IncomeAdmin(SuperUserOnlyAdmin):
 class ExpenseAdmin(SuperUserOnlyAdmin):
     list_display = ("user", "category", "amount", "date")
     list_filter = ("user", "category", "date")
-
-class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ("username", "email", "dashboard_link")
-
-    def dashboard_link(self, obj):
-        url = reverse("budget:admin_user_dashboard", args=[obj.id])
-        return format_html('<a href="{}">View Dashboard</a>', url)
-
-    dashboard_link.short_description = "Dashboard"
-
-admin.site.unregister(User)
-admin.site.register(User, CustomUserAdmin)
