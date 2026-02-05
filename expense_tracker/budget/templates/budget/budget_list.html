@@ -65,16 +65,7 @@
             <!-- ACTIONS -->
             <td class="text-end">
 
-              <button class="btn btn-sm btn-outline-primary rounded-pill me-2 px-3"
-                onclick="openBudgetEditModal(
-                  '{{ b.id }}',
-                  '{{ b.category.id }}',
-                  '{{ b.amount }}',
-                  '{{ b.date }}'
-                )">
-                <i class="bi bi-pencil-square me-1"></i>
-                Edit
-              </button>
+              
 
               <form method="POST"
                     action="{% url 'budget:delete' b.id %}"

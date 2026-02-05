@@ -301,14 +301,31 @@ def delete_income(request, id):
     income = get_object_or_404(Income, id=id)
     income.delete()
     return redirect("income")
+from datetime import datetime
+from django.shortcuts import get_object_or_404, redirect
+from django.core.exceptions import ValidationError
+
 def edit_income(request, id):
-    income = get_object_or_404(Income, id=id)
+    income = get_object_or_404(Income, id=id, user=request.user)
+
     if request.method == "POST":
-        income.source = request.POST["name"]
-        income.amount = request.POST["amount"]
-        income.date = request.POST["date"]
+        income.source = request.POST.get("name") or request.POST.get("source")
+        income.amount = request.POST.get("amount")
+
+        date_str = request.POST.get("date")
+
+        if date_str:
+            try:
+                income.date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                raise ValidationError(
+                    "Invalid date format. Use YYYY-MM-DD"
+                )
+        else:
+            raise ValidationError("Date cannot be empty")
+
         income.save()
-    return redirect("income")
+        return redirect("income")
 
 
 # -------------------------
