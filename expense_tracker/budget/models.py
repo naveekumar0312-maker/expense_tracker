@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.validators import RegexValidator
+from django.utils import timezone
 
 
 # ==============================
@@ -33,22 +34,46 @@ class Category(models.Model):
 # BUDGET MODEL
 # ==============================
 class Budget(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="budgets"
+    )
 
-    # REAL CALENDAR FIELD
-    date = models.DateField()
+    category = models.ForeignKey(
+        "Category",
+        on_delete=models.CASCADE,
+        related_name="budgets"
+    )
 
-    # AUTO DERIVED FIELDS
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+
+    # Budget Period Start Date
+    start_date = models.DateField()
+
+    # Budget Period End Date
+    end_date = models.DateField()
+
+    # Auto Derived Fields
     month = models.PositiveSmallIntegerField(editable=False)
     year = models.PositiveSmallIntegerField(editable=False)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def save(self, *args, **kwargs):
-        self.month = self.date.month
-        self.year = self.date.year
+        self.month = self.start_date.month
+        self.year = self.start_date.year
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.category.name} - ₹{self.amount}"
+
+    class Meta:
+        ordering = ["-created_at"]
 
 
 # ==============================

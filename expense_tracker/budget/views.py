@@ -88,22 +88,47 @@ def register_view(request):
 # -------------------------
 # DASHBOARD
 # -------------------------
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+from .models import Income, Expense, Budget
+
+
 @login_required
 def dashboard(request):
     user = request.user
-    from django.db.models import Sum
 
-    total_income = Income.objects.filter(user=user).aggregate(
-        total=Sum("amount")
-    )["total"] or 0
+    # ================= TOTAL INCOME =================
+    total_income = (
+        Income.objects.filter(user=user)
+        .aggregate(total=Sum("amount"))["total"] or 0
+    )
 
-    total_expense = Expense.objects.filter(user=user).aggregate(
-        total=Sum("amount")
-    )["total"] or 0
+    # ================= TOTAL EXPENSE =================
+    total_expense = (
+        Expense.objects.filter(user=user)
+        .aggregate(total=Sum("amount"))["total"] or 0
+    )
 
+    # ================= TOTAL BUDGET =================
+    total_budget = (
+        Budget.objects.filter(user=user)
+        .aggregate(total=Sum("amount"))["total"] or 0
+    )
+
+    # ================= BUDGET WARNING =================
+    budget_warning = None
+
+    if total_budget > 0 and total_expense > total_budget:
+        difference = total_expense - total_budget
+        budget_warning = f"⚠ Expense exceeded the budget by ₹{difference}"
+
+    # ================= RENDER =================
     return render(request, "budget/dashboard_premium.html", {
         "total_income": total_income,
         "total_expense": total_expense,
+        "total_budget": total_budget,
+        "budget_warning": budget_warning,
     })
 
 # -------------------------
@@ -378,12 +403,48 @@ def edit_expense(request, id):
 # -------------------------
 # BUDGET CRUD
 # -------------------------
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.db.models import Sum
+from django.utils import timezone
+from .models import Budget, Expense
+
 
 @login_required
 def budget_list(request):
-    budgets = Budget.objects.filter(user=request.user).order_by("-year", "-month")
-    return render(request, "budget/budget_list.html", {"budgets": budgets})
+    user = request.user
+    today = timezone.now().date()
 
+    budgets = Budget.objects.filter(user=user)
+
+    budget_data = []
+
+    for b in budgets:
+        # 🔥 Total spent inside budget date range & category
+        total_spent = Expense.objects.filter(
+            user=user,
+            category=b.category,
+            date__range=(b.start_date, b.end_date)
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        is_exceeded = total_spent > b.amount
+
+        # Attach dynamic fields
+        b.total_spent = total_spent
+        b.is_exceeded = is_exceeded
+
+        budget_data.append(b)
+
+    return render(request, "budget/budget_list.html", {
+        "budgets": budget_data,
+        "today": today
+    })
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import BudgetForm
 
 @login_required
 def budget_create(request):
@@ -393,7 +454,8 @@ def budget_create(request):
             obj = form.save(commit=False)
             obj.user = request.user
             obj.save()
-            messages.success(request, "Budget added successfully.")
+
+            messages.success(request, "Category budget added successfully.")
             return redirect("budget:list")
     else:
         form = BudgetForm()
@@ -647,19 +709,26 @@ def admin_user_budget(request, user_id):
     items = Budget.objects.filter(user=user)
     return render(request, "admin/user_budget.html", {"u": user, "items": items})
 
+import csv
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+
 @login_required
 def export_csv_all(request):
+
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="dailyexpense_all_data.csv"'
 
     writer = csv.writer(response)
 
-    profile = Profile.objects.get(user=request.user)
+    user = request.user
+    profile = Profile.objects.get(user=user)
 
     # ================= USER INFO =================
     writer.writerow(["USER DETAILS"])
-    writer.writerow(["Username", request.user.username])
-    writer.writerow(["Email", request.user.email])  # ✅ FIX
+    writer.writerow(["Username", user.username])
+    writer.writerow(["Email", user.email])
     writer.writerow(["Full Name", profile.full_name])
     writer.writerow([])
 
@@ -667,31 +736,68 @@ def export_csv_all(request):
     writer.writerow(["INCOME"])
     writer.writerow(["Source", "Amount", "Date"])
 
-    for i in Income.objects.filter(user=request.user):
+    total_income = 0
+    for i in Income.objects.filter(user=user):
         writer.writerow([i.source, i.amount, i.date])
+        total_income += i.amount
 
+    writer.writerow(["Total Income", total_income])
     writer.writerow([])
 
     # ================= EXPENSE =================
     writer.writerow(["EXPENSE"])
     writer.writerow(["Category", "Amount", "Date"])
 
-    for e in Expense.objects.filter(user=request.user):
+    total_expense = 0
+    for e in Expense.objects.filter(user=user):
         writer.writerow([e.category.name, e.amount, e.date])
+        total_expense += e.amount
 
+    writer.writerow(["Total Expense", total_expense])
     writer.writerow([])
 
     # ================= BUDGET =================
     writer.writerow(["BUDGET"])
-    writer.writerow(["Category", "Amount", "Month", "Year"])
+    writer.writerow(["Category", "Amount", "Start Date", "End Date"])
 
-    for b in Budget.objects.filter(user=request.user):
-        writer.writerow([b.category.name, b.amount, b.month, b.year])
+    total_budget = 0
+    for b in Budget.objects.filter(user=user):
+        writer.writerow([
+            b.category.name,
+            b.amount,
+            b.start_date,
+            b.end_date
+        ])
+        total_budget += b.amount
+
+    writer.writerow(["Total Budget", total_budget])
+    writer.writerow([])
+
+    # ================= WARNING SECTION =================
+    writer.writerow(["SUMMARY"])
+
+    if total_budget > 0 and total_expense > total_budget:
+        difference = total_expense - total_budget
+        writer.writerow([
+            f"⚠ Warning: Budget exceeded by ₹{difference}"
+        ])
+    else:
+        writer.writerow(["Budget is under control."])
+
+    writer.writerow([])
+    writer.writerow(["Net Savings", total_income - total_expense])
 
     return response
 
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+
 @login_required
 def export_pdf_all(request):
+
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="dailyexpense_report.pdf"'
 
@@ -699,18 +805,18 @@ def export_pdf_all(request):
     width, height = A4
 
     y = height - 40
-
-    profile = Profile.objects.get(user=request.user)
+    user = request.user
+    profile = Profile.objects.get(user=user)
 
     # ================= USER DETAILS =================
     p.setFont("Helvetica-Bold", 14)
-    p.drawString(40, y, "DailyExpense – Full Report")
+    p.drawString(40, y, "DailyExpense – Full Financial Report")
     y -= 30
 
     p.setFont("Helvetica", 10)
-    p.drawString(40, y, f"Username : {request.user.username}")
+    p.drawString(40, y, f"Username : {user.username}")
     y -= 15
-    p.drawString(40, y, f"Email    : {request.user.email}")  # ✅ FIX
+    p.drawString(40, y, f"Email    : {user.email}")
     y -= 25
 
     # ================= INCOME =================
@@ -719,14 +825,20 @@ def export_pdf_all(request):
     y -= 20
 
     p.setFont("Helvetica", 10)
-    for i in Income.objects.filter(user=request.user):
+    total_income = 0
+
+    for i in Income.objects.filter(user=user):
         p.drawString(40, y, f"{i.source} | ₹{i.amount} | {i.date}")
+        total_income += i.amount
         y -= 15
         if y < 40:
             p.showPage()
             y = height - 40
 
-    y -= 20
+    y -= 5
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(40, y, f"Total Income : ₹{total_income}")
+    y -= 25
 
     # ================= EXPENSE =================
     p.setFont("Helvetica-Bold", 12)
@@ -734,14 +846,20 @@ def export_pdf_all(request):
     y -= 20
 
     p.setFont("Helvetica", 10)
-    for e in Expense.objects.filter(user=request.user):
+    total_expense = 0
+
+    for e in Expense.objects.filter(user=user):
         p.drawString(40, y, f"{e.category.name} | ₹{e.amount} | {e.date}")
+        total_expense += e.amount
         y -= 15
         if y < 40:
             p.showPage()
             y = height - 40
 
-    y -= 20
+    y -= 5
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(40, y, f"Total Expense : ₹{total_expense}")
+    y -= 25
 
     # ================= BUDGET =================
     p.setFont("Helvetica-Bold", 12)
@@ -749,15 +867,46 @@ def export_pdf_all(request):
     y -= 20
 
     p.setFont("Helvetica", 10)
-    for b in Budget.objects.filter(user=request.user):
+    total_budget = 0
+
+    for b in Budget.objects.filter(user=user):
         p.drawString(
             40, y,
-            f"{b.category.name} | ₹{b.amount} | {b.month}/{b.year}"
+            f"{b.category.name} | ₹{b.amount} | {b.start_date} to {b.end_date}"
         )
+        total_budget += b.amount
         y -= 15
         if y < 40:
             p.showPage()
             y = height - 40
+
+    y -= 5
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(40, y, f"Total Budget : ₹{total_budget}")
+    y -= 30
+
+    # ================= SUMMARY SECTION =================
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(40, y, "Summary")
+    y -= 20
+
+    p.setFont("Helvetica", 10)
+
+    # 🔥 Budget Warning Logic
+    if total_budget > 0 and total_expense > total_budget:
+        difference = total_expense - total_budget
+        p.drawString(
+            40,
+            y,
+            f"⚠ Warning: Budget exceeded by ₹{difference}"
+        )
+    else:
+        p.drawString(40, y, "Budget is under control.")
+
+    y -= 20
+
+    net_savings = total_income - total_expense
+    p.drawString(40, y, f"Net Savings : ₹{net_savings}")
 
     p.showPage()
     p.save()

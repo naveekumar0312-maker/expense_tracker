@@ -61,7 +61,11 @@ def admin_user_reports(request, user_id):
         {"u": u, "incomes": incomes, "expenses": expenses},
     )
 
-# ================= CSV EXPORT (SINGLE USER) =================
+from django.db.models import Sum
+from django.utils import timezone
+from django.contrib.admin.views.decorators import staff_member_required
+
+
 @staff_member_required
 def admin_export_csv_single_user(request, user_id):
     u = User.objects.get(id=user_id)
@@ -104,14 +108,41 @@ def admin_export_csv_single_user(request, user_id):
 
     # ================= BUDGET =================
     writer.writerow(["BUDGET"])
-    writer.writerow(["Category", "Amount", "Month", "Year"])
-    for b in Budget.objects.filter(user=u):
-        writer.writerow([b.category.name, b.amount, b.month, b.year])
+    writer.writerow(["Category", "Amount", "Start Date", "End Date", "Spent", "Status"])
+
+    budgets = Budget.objects.filter(user=u)
+
+    for b in budgets:
+        total_spent = Expense.objects.filter(
+            user=u,
+            category=b.category,
+            date__range=(b.start_date, b.end_date)
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        status = "Exceeded" if total_spent > b.amount else "Within Limit"
+
+        writer.writerow([
+            b.category.name,
+            b.amount,
+            b.start_date,
+            b.end_date,
+            total_spent,
+            status
+        ])
+
+        # 🔥 ONE LINE WARNING
+        if total_spent > b.amount:
+            writer.writerow([
+                f"WARNING: Budget exceeded for {b.category.name}"
+            ])
 
     return response
 
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 
-# ================= PDF EXPORT (SINGLE USER) =================
+
 @staff_member_required
 def admin_export_pdf_single_user(request, user_id):
     u = User.objects.get(id=user_id)
@@ -140,17 +171,45 @@ def admin_export_pdf_single_user(request, user_id):
 
     story.append(Spacer(1, 20))
 
-    # INCOME
+    # ================= INCOME =================
     story.append(Paragraph("<b>Income</b>", styles["Heading2"]))
     for i in Income.objects.filter(user=u):
-        story.append(Paragraph(f"{i.source} - ₹{i.amount}", styles["Normal"]))
+        story.append(Paragraph(f"{i.source} - ₹{i.amount} - {i.date}", styles["Normal"]))
 
     story.append(Spacer(1, 15))
 
-    # EXPENSE
+    # ================= EXPENSE =================
     story.append(Paragraph("<b>Expense</b>", styles["Heading2"]))
     for e in Expense.objects.filter(user=u):
-        story.append(Paragraph(f"{e.category.name} - ₹{e.amount}", styles["Normal"]))
+        story.append(Paragraph(f"{e.category.name} - ₹{e.amount} - {e.date}", styles["Normal"]))
+
+    story.append(Spacer(1, 20))
+
+    # ================= BUDGET =================
+    story.append(Paragraph("<b>Budget</b>", styles["Heading2"]))
+
+    budgets = Budget.objects.filter(user=u)
+
+    for b in budgets:
+        total_spent = Expense.objects.filter(
+            user=u,
+            category=b.category,
+            date__range=(b.start_date, b.end_date)
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        story.append(Paragraph(
+            f"{b.category.name} | ₹{b.amount} | {b.start_date} to {b.end_date} | Spent: ₹{total_spent}",
+            styles["Normal"]
+        ))
+
+        # 🔴 WARNING LINE
+        if total_spent > b.amount:
+            story.append(Paragraph(
+                "<font color='red'><b>WARNING: Budget exceeded!</b></font>",
+                styles["Normal"]
+            ))
+
+        story.append(Spacer(1, 10))
 
     doc.build(story)
     return response
