@@ -1,8 +1,6 @@
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
-from django.db.models import Sum
-from .models import Income, Expense,Profile
 from django.contrib.admin.views.decorators import staff_member_required
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -16,14 +14,18 @@ from budget.models import Income, Expense, Budget, Profile
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from django.contrib.auth.models import User
+from django.db.models import Sum
+from datetime import date, timedelta
+from django.utils import timezone
 
 
 
 def superuser_only(user):
     return user.is_superuser
-
-
 
 @user_passes_test(superuser_only)
 def admin_user_profile(request, user_id):
@@ -49,21 +51,6 @@ def admin_user_savings(request, user_id):
         "admin/user_savings.html",
         {"u": u, "income": income, "expense": expense, "savings": income - expense},
     )
-
-@user_passes_test(superuser_only)
-def admin_user_reports(request, user_id):
-    u = get_object_or_404(User, id=user_id)
-    incomes = Income.objects.filter(user=u).order_by("-date")
-    expenses = Expense.objects.filter(user=u).order_by("-date")
-    return render(
-        request,
-        "admin/user_reports.html",
-        {"u": u, "incomes": incomes, "expenses": expenses},
-    )
-
-from django.db.models import Sum
-from django.utils import timezone
-from django.contrib.admin.views.decorators import staff_member_required
 
 
 @staff_member_required
@@ -137,11 +124,6 @@ def admin_export_csv_single_user(request, user_id):
             ])
 
     return response
-
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
-
 
 @staff_member_required
 def admin_export_pdf_single_user(request, user_id):
@@ -276,3 +258,5 @@ admin.site.unregister(User)
 
 # register fixed admin
 admin.site.register(User, CustomUserAdmin)
+
+

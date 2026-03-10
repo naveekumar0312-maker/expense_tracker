@@ -3,8 +3,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
 from django.urls import reverse
 from django.utils.html import format_html
+from django.db.models import Sum
 
-from .models import Category, Budget, Income, Expense
+from budget.models import Category, Budget, Income, Expense
 
 
 # ==================================================
@@ -33,68 +34,74 @@ class SuperUserOnlyAdmin(admin.ModelAdmin):
 # ==================================================
 admin.site.unregister(User)
 
+from django.utils.html import format_html
+from django.db.models import Sum
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
 
     list_display = (
         "username",
         "email",
-        "dashboard",
-        "income",
-        "expense",
-        "budget",
-        "reports",
-        "delete_user",
+        "total_income",
+        "total_expense",
+        "savings",
+        "report_buttons",
+        "delete_button",
     )
 
     search_fields = ("username", "email")
 
-    # 🔥 hide superusers
+    # 🔥 Hide superusers
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.filter(is_superuser=False)
 
-    def _btn(self, text, url):
-        return format_html('<a class="button" href="{}">{}</a>', url, text)
+    # ================= FINANCIAL DATA =================
 
-    def dashboard(self, obj):
-        return self._btn(
-            "Dashboard",
-            reverse("budget:admin_user_dashboard", args=[obj.id])
-        )
+    def total_income(self, obj):
+        total = Income.objects.filter(user=obj).aggregate(
+            t=Sum("amount")
+        )["t"] or 0
+        return f"₹ {total}"
 
-    def income(self, obj):
-        return self._btn(
-            "Income",
-            reverse("admin:budget_income_changelist") + f"?user__id__exact={obj.id}"
-        )
+    def total_expense(self, obj):
+        total = Expense.objects.filter(user=obj).aggregate(
+            t=Sum("amount")
+        )["t"] or 0
+        return f"₹ {total}"
 
-    def expense(self, obj):
-        return self._btn(
-            "Expense",
-            reverse("admin:budget_expense_changelist") + f"?user__id__exact={obj.id}"
-        )
+    def savings(self, obj):
+        income = Income.objects.filter(user=obj).aggregate(
+            t=Sum("amount")
+        )["t"] or 0
+        expense = Expense.objects.filter(user=obj).aggregate(
+            t=Sum("amount")
+        )["t"] or 0
+        return f"₹ {income - expense}"
 
-    def budget(self, obj):
-        return self._btn(
-            "Budget",
-            reverse("admin:budget_budget_changelist") + f"?user__id__exact={obj.id}"
-        )
+    # ================= REPORT BUTTONS =================
 
-    def reports(self, obj):
-        return self._btn(
-            "Reports",
-            reverse("budget:admin_user_reports", args=[obj.id])
-        )
-
-    def delete_user(self, obj):
+    def report_buttons(self, obj):
         return format_html(
-            '<a class="button" style="background:#dc3545;color:white" '
+            '<a class="button" href="{}">CSV</a> '
+            '<a class="button" href="{}">PDF</a>',
+            reverse("budget:admin_export_csv_single_user", args=[obj.id]),
+            reverse("budget:admin_export_pdf_single_user", args=[obj.id]),
+        )
+
+    report_buttons.short_description = "Reports"
+
+    # ================= DELETE BUTTON =================
+
+    def delete_button(self, obj):
+        return format_html(
+            '<a class="button" style="background:#dc3545;color:white;padding:4px 8px;border-radius:4px;" '
             'href="{}">Delete</a>',
             reverse("admin:auth_user_delete", args=[obj.id])
         )
 
-
+    delete_button.short_description = "Delete User"
 # ==================================================
 # OTHER MODELS (SUPERUSER ONLY)
 # ==================================================
