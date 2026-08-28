@@ -1,9 +1,15 @@
+# pyrefly: ignore [missing-import]
 from django.db import models
 from types import SimpleNamespace
+# pyrefly: ignore [missing-import]
 from django.contrib.auth.models import User
+# pyrefly: ignore [missing-import]
 from django.db.models.signals import post_save
+# pyrefly: ignore [missing-import]
 from django.dispatch import receiver
+# pyrefly: ignore [missing-import]
 from django.core.validators import RegexValidator
+# pyrefly: ignore [missing-import]
 from django.utils import timezone
 
 
@@ -110,11 +116,31 @@ class Expense(models.Model):
 # ==============================
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    full_name = models.CharField(max_length=100, blank=True)
-    age = models.IntegerField(null=True, blank=True)
-    date_of_birth = models.DateField(null=True, blank=True)
-    profile_pic = models.ImageField(upload_to="profiles/", null=True, blank=True)
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="profile"
+    )
+
+    full_name = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
+    email = models.EmailField(
+        blank=True,
+        null=True
+    )
+
+    age = models.PositiveIntegerField(
+        null=True,
+        blank=True
+    )
+
+    date_of_birth = models.DateField(
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return self.user.username
